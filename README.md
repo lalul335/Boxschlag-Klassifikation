@@ -1,2 +1,2 @@
 # Boxschlag-Klassifikation
-Boxschlag Klassifikationsmodell, welches anhand von Sensordaten einer Smartwatch klassifizieren kann
+Boxschlag Klassifikationsmodell, welches verschiedene Schlagarten anhand von Sensordaten einer Smartwatch klassifizieren kann. 
