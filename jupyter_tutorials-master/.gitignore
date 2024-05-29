@@ -1,0 +1,9 @@
+Database/
+*.json
+*.csv
+.ipynb_checkpoints/
+__pycache__
+*.png
+*.jpg
+*.jpeg
+timeseries_helpers/
