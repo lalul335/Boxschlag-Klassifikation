@@ -8,9 +8,9 @@ def extract_accelerometer_data(csv_file_path):
     # Extract the accelerometer data columns
     # Modify the column names based on your file's actual headers
     accelerometer_data = df[['accelerometerTimestamp_sinceReboot(s)','accelerometerAccelerationX(G)', 'accelerometerAccelerationY(G)', 'accelerometerAccelerationZ(G)']]
+    accelerometer_data = accelerometer_data.rename(columns={'accelerometerTimestamp_sinceReboot(s)':'timestamp', 'accelerometerAccelerationX(G)':'x', 'accelerometerAccelerationY(G)':'y', 'accelerometerAccelerationZ(G)':'z'})
 
-    # Save the extracted accelerometer data to a new CSV file
-    accelerometer_data.to_json('accelerometer_data.json', orient='records', lines=True)
+    accelerometer_data.to_json('/Users/raouldoublan/Documents/GitHub/Boxschlag-Klassifikation/accelerometer_data.json', orient='records', lines=True)
 
     return accelerometer_data
 
