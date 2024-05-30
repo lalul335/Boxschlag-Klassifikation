@@ -10,8 +10,9 @@ def extract_accelerometer_data(csv_file_path):
     accelerometer_data = df[['accelerometerTimestamp_sinceReboot(s)','accelerometerAccelerationX(G)', 'accelerometerAccelerationY(G)', 'accelerometerAccelerationZ(G)']]
     accelerometer_data = accelerometer_data.rename(columns={'accelerometerTimestamp_sinceReboot(s)':'timestamp', 'accelerometerAccelerationX(G)':'x', 'accelerometerAccelerationY(G)':'y', 'accelerometerAccelerationZ(G)':'z'})
 
-    accelerometer_data.to_json('/Users/raouldoublan/Documents/GitHub/Boxschlag-Klassifikation/accelerometer_data.json', orient='records', lines=True)
+    accelerometer_data.to_json(r'C:\Users\Raoul\Documents\GitHub\Boxschlag-Klassifikation\accelerometer_data.json', orient='records', lines=True)
 
+    #returns a dataframe
     return accelerometer_data
 
 def extract_gyroscope_data(csv_file_path):
@@ -22,7 +23,7 @@ def extract_gyroscope_data(csv_file_path):
     gyroscope_data = df[['gyroscopeTimestamp_sinceReboot(s)', 'gyroscopeRotationX(rad/s)', 'gyroscopeRotationY(rad/s)', 'gyroscopeRotationZ(rad/s)']]
 
     # Save the extracted gyroscope data to a new CSV file
-    gyroscope_data.to_json('gyroscope_data.json', orient='records', lines=True)
+    gyroscope_data.to_json('gyroscope_data.json', orient='index')
 
     return gyroscope_data
 
@@ -43,6 +44,8 @@ def csv_to_dataset_list(path):
         list: List object containing the datasets as dataframe objects
     """
     ds_rcsv = extract_accelerometer_data(path)
+    #ds_rcsv = pd.read_csv(path)
+    #ds_rcsv.drop(['Unnamed: 0'], axis=1, inplace=True)
     ds_rcsv.info()
 
     # get the size of a dataset
