@@ -1,17 +1,9 @@
-from data_preprocessing import extract_accelerometer_data, csv_to_dataset_list
+from data_preprocessing import extract_accelerometer_data, csv_to_dataset_list, csv_to_json
 import pandas as pd
 
-data = extract_accelerometer_data('/Users/raouldoublan/Documents/GitHub/Boxschlag-Klassifikation/data/Max_Gerade.csv')
+data = csv_to_json(r'C:\Users\Raoul\Documents\GitHub\Boxschlag-Klassifikation\data\Max_Gerade.csv')
+ds = extract_accelerometer_data(r'C:\Users\Raoul\Documents\GitHub\Boxschlag-Klassifikation\data\Max_Gerade.csv')
 
+#print(ds)
 print(data)
-
-# Assuming 'data' is your DataFrame
-raw_data = data.to_dict('records')
-
-# Now, 'raw_data' is a list of dictionaries where each dictionary represents a row in 'data'
-# You can put this list under the key 'raw' in another dictionary
-
-final_dict = {'raw': raw_data}
-
-#print(final_dict)
 

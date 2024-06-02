@@ -12,6 +12,8 @@ def extract_accelerometer_data(csv_file_path):
 
     accelerometer_data.to_json(r'C:\Users\Raoul\Documents\GitHub\Boxschlag-Klassifikation\accelerometer_data.json', orient='records', lines=True)
 
+    accelerometer_data = accelerometer_data.dropna()
+
     #returns a dataframe
     return accelerometer_data
 
@@ -74,3 +76,21 @@ def csv_to_dataset_list(path):
         print("Errors while data import!\n See error message(s) above for more.")
     return ds_buff
 
+
+def csv_to_json(file_path, ds=[]):
+    # Read the CSV file and morph it into a indexed Dictionary
+    data = extract_accelerometer_data(file_path)
+
+    # create raws
+    raws = []
+    for idx, row in data.iterrows():
+        raw = {'_id': idx, 'timestamp': row['timestamp'], 'x': row['x'], 'y': row['y'], 'z': row['z']}
+        raws.append(raw)
+
+    # insert raws into dataset
+    dataset = {'raws': raws, 'label': 0, 'count': len(data)}
+
+    # append dataset to dataset list
+    ds.append(dataset)
+
+    return ds
