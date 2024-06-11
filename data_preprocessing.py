@@ -11,7 +11,6 @@ def extract_accelerometer_data(csv_file_path):
     # Modify the column names based on your file's actual headers
     accelerometer_data = df[['accelerometerTimestamp_sinceReboot(s)','accelerometerAccelerationX(G)', 'accelerometerAccelerationY(G)', 'accelerometerAccelerationZ(G)']]
     accelerometer_data = accelerometer_data.rename(columns={'accelerometerTimestamp_sinceReboot(s)':'timestamp', 'accelerometerAccelerationX(G)':'x', 'accelerometerAccelerationY(G)':'y', 'accelerometerAccelerationZ(G)':'z'})
-    accelerometer_data['label'] = 0
     # drop rows with NaN values
     accelerometer_data = accelerometer_data.dropna()
     accelerometer_data = accelerometer_data.reset_index(drop=True)
@@ -31,10 +30,22 @@ def extract_gyroscope_data(csv_file_path):
     df = pd.read_csv(csv_file_path)
 
     # Extract the gyroscope data columns
-    gyroscope_data = df[['gyroscopeTimestamp_sinceReboot(s)', 'gyroscopeRotationX(rad/s)', 'gyroscopeRotationY(rad/s)', 'gyroscopeRotationZ(rad/s)']]
+    #gyroscope_data = df[['gyroscopeTimestamp_sinceReboot(s)', 'gyroscopeRotationX(rad/s)', 'gyroscopeRotationY(rad/s)', 'gyroscopeRotationZ(rad/s)']]
+    gyroscope_data = df[['motionTimestamp_sinceReboot(s)', 'motionRotationRateX(rad/s)', 'motionRotationRateY(rad/s)', 'motionRotationRateZ(rad/s)']]
+    gyroscope_data = gyroscope_data.rename(columns={'motionTimestamp_sinceReboot(s)':'timestamp', 'motionRotationRateX(rad/s)':'x', 'motionRotationRateY(rad/s)':'y', 'motionRotationRateZ(rad/s)':'z'})
+    gyroscope_data['label'] = 0
+
+    # drop rows with NaN values and reset index
+    gyroscope_data = gyroscope_data.dropna()
+    gyroscope_data = gyroscope_data.reset_index(drop=True)
+
+    # let timestampt column start with 0 and change it from seconds to nanoseconds
+    first_timestamp = gyroscope_data['timestamp'][0]
+    gyroscope_data['timestamp'] = gyroscope_data['timestamp'] - first_timestamp
+    gyroscope_data['timestamp'] = gyroscope_data['timestamp'] * 1e9
 
     # Save the extracted gyroscope data to a new CSV file
-    gyroscope_data.to_json('gyroscope_data.json', orient='index')
+    #gyroscope_data.to_json('gyroscope_data.json', orient='index')
 
     return gyroscope_data
 
@@ -86,24 +97,17 @@ def csv_to_dataset_list(path):
     return ds_buff
 
 
-def csv_to_json(file_path, ds=[]):
-    # Read the CSV file and morph it into a indexed Dictionary
-    data = extract_accelerometer_data(file_path)
-
-
+def data_to_json(data, label):
     # create raws
-    raws = []
+    raw = []
     for idx, row in data.iterrows():
         raw = {'_id': idx, 'timestamp': row['timestamp'], 'x': row['x'], 'y': row['y'], 'z': row['z']}
-        raws.append(raw)
+        raw.append(raw)
 
     # insert raws into dataset
-    dataset = {'raws': raws, 'label': 0, 'count': len(data)}
+    one_punch = {'label': label, 'count': len(data), 'periodNS': data['timestamp'].sum() ,'raws': raw}
 
-    # append dataset to dataset list
-    ds.append(dataset)
-
-    return ds
+    return one_punch
 
 
 def normate_dataset_period(periodLengthInMS, samplingRateUS, ds_el, interpolationKind='cubic'):
@@ -136,7 +140,7 @@ def normate_dataset_period(periodLengthInMS, samplingRateUS, ds_el, interpolatio
 
     dataset_numb = 0
 
-    total = len(dataset)
+    #total = len(dataset)
 
 
 
