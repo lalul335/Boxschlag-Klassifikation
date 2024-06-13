@@ -6,3 +6,8 @@ To do's:
 - Daten labeln
 - Daten normalisieren
 - Daten fürs Lernen umformen
+
+Ideen von Nils:
+- PCA verwenden
+- dichte funktion von perfektem Schlag und dann vergleichen (Kullback-Leiber divergence)
+- Beschleuniging normalisieren 

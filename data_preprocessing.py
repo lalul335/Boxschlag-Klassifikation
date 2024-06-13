@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 from scipy.interpolate import interp1d
+import scipy
 
 
 def extract_accelerometer_data(csv_file_path):
@@ -110,7 +111,7 @@ def data_to_json(data, label):
     return one_punch
 
 
-def normate_dataset_period(periodLengthInMS, samplingRateUS, ds_el, interpolationKind='cubic'):
+def normate_dataset_period(periodLengthInMS, samplingRateUS, dataset, interpolationKind='cubic'):
     """Normates the period of a given dataset list. Datasets in dataframe format! Stretches the periods with interpolation method choosen with the interpolationKind parameter. Default: Cubic. Converting mechanism is made for the notation style of the smartPunch project.
 
     Keyword arguments:
@@ -133,67 +134,75 @@ def normate_dataset_period(periodLengthInMS, samplingRateUS, ds_el, interpolatio
     ds_interp = []
 
     # define cols for interp. dataset
-    the_cols = ['timestamp', 'x', 'y', 'z','label']
+    the_cols = ['x', 'y', 'z', 'timestamp', 'label']
 
     # ds_interp = pd.DataFrame(dataset_raws_storer,np.arange(0,data_size,1),['x','y','z']);
     # print(ds_interp)
 
     dataset_numb = 0
 
-    #total = len(dataset)
+    total = len(dataset)
 
+    # create and store the interpolation functions
+    for idx, ds_el in enumerate(dataset):
 
+        if idx > 0:
+            if idx % 100 == 0:
+                print("progress: {:.2f} %".format(idx*100/total))
 
-    # copy original datframe object
-    # ds_el = ds_el_orig.copy(deep=True)
+        # copy original datframe object
+        # ds_el = ds_el_orig.copy(deep=True)
 
-    # original period length
-    orig_period_length_us = ds_el['timestamp'][len(ds_el['timestamp'])-1]
+        # original period length
+        orig_period_length_us = ds_el['timestamp'][len(ds_el['timestamp'])-1]
 
-    # stores the interpolating functions for each dataset element and axis
-    f_x = (interp1d(ds_el['timestamp'].values.copy(), ds_el['x'].values.copy(), kind=interpolationKind,
+        # stores the interpolating functions for each dataset element and axis
+        f_x = (interp1d(ds_el['timestamp'].values.copy(), ds_el['x'].values.copy(), kind=interpolationKind,
                         bounds_error=False, fill_value=(ds_el['x'][0].copy(), ds_el['x'][0].copy())))
-    f_y = (interp1d(ds_el['timestamp'].values.copy(), ds_el['y'].values.copy(), kind=interpolationKind,
+        f_y = (interp1d(ds_el['timestamp'].values.copy(), ds_el['y'].values.copy(), kind=interpolationKind,
                         bounds_error=False, fill_value=(ds_el['y'][0].copy(), ds_el['y'][0].copy())))
-    f_z = (interp1d(ds_el['timestamp'].values.copy(), ds_el['z'].values.copy(), kind=interpolationKind,
+        f_z = (interp1d(ds_el['timestamp'].values.copy(), ds_el['z'].values.copy(), kind=interpolationKind,
                         bounds_error=False, fill_value=(ds_el['z'][0].copy(), ds_el['z'][0].copy())))
 
-    # helper variables
-    sample_moment = 0
+        # helper variables
+        sample_moment = 0
 
-    # stores the interpolated raw data of the current dataset element as array(s)
-    dataset_raws_storer = []
-    the_indxs = []
-    idx = 0
+        # stores the interpolated raw data of the current dataset element as array(s)
+        dataset_raws_storer = []
+        the_indxs = []
+        idx = 0
 
-    # original period length is in intervall limit
-    if orig_period_length_us <= interp_period_us:
-          # interpolate x,y,z raw array of all elements in current dataset
-         while sample_moment <= interp_period_us:
-               dataset_raws_storer.append([float(f_x(sample_moment).copy()), float(f_y(sample_moment).copy()), float(f_z(sample_moment).copy()), int(
-                   # dataset_raws_storer.append([5.3, 5.3, 5.3, int(
-                   sample_moment), ds_el['label'][0], ds_el['hand'][0], ds_el['annotator'][0]])
-               sample_moment += samplingRateUS
-               the_indxs.append(idx)
-               idx += 1
-    else:
-        # original interval is to long -> center data values and cut borders
-        time_to_cutoff_on_each_side = round(
-            ((orig_period_length_us - interp_period_us)/2), 0)
-        # print('time_to_cutoff_on_each_side in us: {}'.format(time_to_cutoff_on_each_side))
-        # round((time_to_cutoff_on_each_side/samplingRateUS),0)*samplingRateUS
-        pseudo_sample_moment = time_to_cutoff_on_each_side
-        # print('pseudo_sample_moment in us: {}'.format(pseudo_sample_moment))
-        while sample_moment <= interp_period_us:
-            dataset_raws_storer.append([float(f_x(pseudo_sample_moment).copy()), float(f_y(pseudo_sample_moment).copy()), float(f_z(pseudo_sample_moment).copy()),
-                                        # dataset_raws_storer.append([5.3, 5.3, 5.3,
-                                        int(sample_moment), ds_el['label'][0], ds_el['hand'][0], ds_el['annotator'][0]])
-            pseudo_sample_moment += samplingRateUS
-            sample_moment += samplingRateUS
-            the_indxs.append(idx)
-            idx += 1
-        #create a new interpolated dataset entry
-    ds_interp.append(pd.DataFrame(
+        # original period length is in intervall limit
+        if orig_period_length_us <= interp_period_us:
+            # interpolate x,y,z raw array of all elements in current dataset
+            while sample_moment <= interp_period_us:
+                dataset_raws_storer.append([float(f_x(sample_moment).copy()), float(f_y(sample_moment).copy()), float(f_z(sample_moment).copy()), int(
+                    # dataset_raws_storer.append([5.3, 5.3, 5.3, int(
+                    sample_moment), ds_el['label'][0]])
+                sample_moment += samplingRateUS
+                the_indxs.append(idx)
+                idx += 1
+        else:
+            # original interval is to long -> center data values and cut borders
+            time_to_cutoff_on_each_side = round(
+                ((orig_period_length_us - interp_period_us)/2), 0)
+            # print('time_to_cutoff_on_each_side in us: {}'.format(time_to_cutoff_on_each_side))
+
+            # round((time_to_cutoff_on_each_side/samplingRateUS),0)*samplingRateUS
+            pseudo_sample_moment = time_to_cutoff_on_each_side
+            # print('pseudo_sample_moment in us: {}'.format(pseudo_sample_moment))
+
+            while sample_moment <= interp_period_us:
+                dataset_raws_storer.append([float(f_x(pseudo_sample_moment).copy()), float(f_y(pseudo_sample_moment).copy()), float(f_z(pseudo_sample_moment).copy()),
+                                            # dataset_raws_storer.append([5.3, 5.3, 5.3,
+                                            int(sample_moment), ds_el['label'][0]])
+                pseudo_sample_moment += samplingRateUS
+                sample_moment += samplingRateUS
+                the_indxs.append(idx)
+                idx += 1
+
+       # create a new interpolated dataset entry
+        ds_interp.append(pd.DataFrame(
             dataset_raws_storer, the_indxs, the_cols))
 
     return ds_interp
@@ -222,8 +231,75 @@ def jsonData_to_dataset_in_timedifference_us(data):
         for raw in value['raws']:
             raw_time_us += int(raw['timestamp'])/1000
             the_raws.append([raw['x'], raw['y'], raw['z'], int(
-                raw_time_us), value['label'], value['hand'], value['annotator']])
+                raw_time_us), value['label']])
             the_indxs.append(idx)
             idx += 1
         the_data.append(pd.DataFrame(the_raws, the_indxs, the_cols))
     return the_data
+
+def data_to_raw(data, label):
+    data = data.reset_index()
+
+    if data.empty:
+        print('Data is empty')
+        return None
+    if len(data) == 0:
+        periodNS = data.loc[0, 'timestamp']
+    else:
+        periodNS = data.loc[len(data)-1, 'timestamp'] - data.loc[0, 'timestamp']
+
+
+    # create raws
+    raws = []
+    for idx, row in data.iterrows():
+        raw = {'_id': idx, 'timestamp': row['timestamp'], 'x': row['x'], 'y': row['y'], 'z': row['z']}
+        raws.append(raw)
+
+    # insert raws into dataset
+    one_punch = {'label': label, 'count': len(data), 'periodNS': periodNS ,'raws': raws}
+
+    return one_punch
+
+def auto_labeling(data, axis, height, distance, label):
+    """
+    Args:
+        label: 1 ist Gerade, 2 ist Kinnhacken, 3 ist Kopfhacken
+
+    Returns:
+    """
+    # liste mit Schlägen
+    punches = []
+
+    # df mit den Hochpunkten
+    p = scipy.signal.find_peaks(data[axis], height=height, distance=distance)
+    peaks = data.iloc[p[0]]
+
+
+
+    # eine Spalte mit den Indizes der Hochpunkte wird erstellt
+    peaks = peaks.reset_index()
+
+    # start and endpoint of punches
+    start = 0
+    end = 0
+
+    first_iteration = True
+
+    for idx, row in peaks.iterrows():
+
+        if first_iteration:# first iteration
+            start = 0
+            end = (peaks.loc[1, 'index'] + peaks.loc[0, 'index']) // 2
+            first_iteration = False
+        elif idx == len(peaks) - 1:# last iteration
+            start = (peaks.loc[idx - 1, 'index'] + peaks.loc[idx, 'index']) // 2
+            end = len(data)
+        else:
+            start = (peaks.loc[idx - 1, 'index'] + peaks.loc[idx, 'index']) // 2
+            end = (peaks.loc[idx, 'index'] + peaks.loc[idx + 1, 'index']) // 2
+
+        # Label the data from start to end
+        ds = data_to_raw(data[start:end], label)
+        punches.append(ds)
+
+    return punches
