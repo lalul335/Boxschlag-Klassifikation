@@ -39,7 +39,7 @@ def normate_dataset_period(periodLengthInMS, samplingRateUS, dataset, interpolat
     ds_interp = []
 
     # define cols for interp. dataset
-    the_cols = ['x', 'y', 'z', 'timestamp', 'label']
+    the_cols = ['x', 'y', 'z', 'timestamp', 'label', 'hand', 'annotator']
 
     # ds_interp = pd.DataFrame(dataset_raws_storer,np.arange(0,data_size,1),['x','y','z']);
     # print(ds_interp)

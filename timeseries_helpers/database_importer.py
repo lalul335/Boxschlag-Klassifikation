@@ -61,6 +61,7 @@ def jsonData_to_dataset_in_timedifference_us(data):
         idx = 0
         raw_time_us = 0
         for raw in value['raws']:
+            # nano to micro
             raw_time_us += int(raw['timestamp'])/1000
             the_raws.append([raw['x'], raw['y'], raw['z'], int(
                 raw_time_us), value['label'], value['hand'], value['annotator']])
