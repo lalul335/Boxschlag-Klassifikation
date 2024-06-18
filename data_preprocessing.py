@@ -7,11 +7,14 @@ from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
 
 
-def extract_accelerometer_data(csv_file_path,startpunkt=0,  nano=True):
+def extract_accelerometer_data(csv_file_path,startpunkt=0,  nano=True, endpunkt = 0):
     # Load the CSV file into a DataFrame
     df = pd.read_csv(csv_file_path)
 
-    df = df[startpunkt:].copy()
+    if endpunkt != 0:
+        df = df[startpunkt:endpunkt].copy()
+    else:
+        df = df[startpunkt:].copy()
 
     # Extract the accelerometer data columns
     # Modify the column names based on your file's actual headers
