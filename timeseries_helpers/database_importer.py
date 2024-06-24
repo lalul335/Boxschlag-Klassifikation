@@ -18,7 +18,7 @@ def jsonData_to_dataset_in_time_format(data):
         list        --  List object containing the datasets as dataframe objects with timestamps in datetime object format.
     """
 
-    the_cols = ['x', 'y', 'z', 'timestamp', 'label', 'hand', 'annotator']
+    the_cols = ['x', 'y', 'z', 'timestamp', 'label']
     the_data = []
 
     for value in data:
@@ -31,7 +31,7 @@ def jsonData_to_dataset_in_time_format(data):
             micro = int(raw['timestamp'])/1000
             raw_time = cur_time + datetime.timedelta(microseconds=micro)
             the_raws.append([raw['x'], raw['y'], raw['z'], int(
-                raw_time), value['label'], value['hand'], value['annotator']])
+                raw_time), value['label']])
             cur_time = raw_time
             the_indxs.append(idx)
             idx += 1
@@ -61,6 +61,7 @@ def jsonData_to_dataset_in_timedifference_us(data):
         idx = 0
         raw_time_us = 0
         for raw in value['raws']:
+            # nano to micro
             raw_time_us += int(raw['timestamp'])/1000
             the_raws.append([raw['x'], raw['y'], raw['z'], int(
                 raw_time_us), value['label'], value['hand'], value['annotator']])
