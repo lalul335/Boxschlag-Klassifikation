@@ -164,7 +164,6 @@ def jsonData_to_dataset_in_timedifference_us(data):
 
     the_cols = ['x', 'y', 'z', 'timestamp', 'label']
     the_data = []
-    print("moin")
     for value in data:
         the_raws = []
         the_indxs = []
