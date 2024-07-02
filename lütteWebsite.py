@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from tensorflow.keras.models import load_model
 import matplotlib.pyplot as plt
+import prepro
 
 
 def plotdata(_x_train, predictions):
@@ -15,7 +16,6 @@ def plotdata(_x_train, predictions):
     index_hoechster_wert_0 = np.argmax(predictions[:, 0])
     index_hoechster_wert_1 = np.argmax(predictions[:, 1])
     index_hoechster_wert_2 = np.argmax(predictions[:, 2])
-
 
     def plot_instance(ax, instance, title):
         FEATURE_NAMES = ['x', 'y', 'z']
@@ -43,19 +43,20 @@ def plotdata(_x_train, predictions):
     plt.savefig('plot.png')
     return 'plot.png'
 
-def showData(x_train, predictions):
 
-    num_to_category = {0: 'Gerade', 1: 'Kinnhaken', 2: 'Kopfhaken'}
+def showData(x_train, predictions):
+    num_to_category = {0: 'Gerade', 1: 'Kopfhaken', 2: 'Kinnhaken'}
 
     predicted_classes = np.argmax(predictions, axis=1)
 
     class_counts = np.bincount(predicted_classes)
     gerade_count = class_counts[0]
-    kinnhaken_count = class_counts[1]
-    kopfhaken_count = class_counts[2]
+
+    kopfhaken_count = class_counts[1]
+    kinnhaken_count = class_counts[2]
     total = gerade_count + kinnhaken_count + kopfhaken_count
     plot = plotdata(x_train, predictions)
-    return gerade_count, kinnhaken_count, kopfhaken_count, total, plot
+    return gerade_count, kopfhaken_count, kinnhaken_count, total, plot
 
 
 def neuronalnet(x_train, y_train):
@@ -65,12 +66,9 @@ def neuronalnet(x_train, y_train):
     return showData(x_train, dings)
 
 
-def open_json(json_file):
+def open_json(dsds):
     periodLengthMS = 1000
     sampleRateUS = 10000
-
-    with open(json_file, 'r') as f:
-        dsds = json.load(f)
 
     ds = prepro.jsonData_to_dataset_in_timedifference_us(dsds)
 
@@ -87,7 +85,7 @@ def open_json(json_file):
     _x_train = np.array(_x_train)
     _y_train = np.array(_y_train)
 
-    _label = ['Gerade', 'Kinnhaken', 'Kopfhaken']
+    _label = ['Gerade', 'Kopfhaken', 'Kinnhaken']
     category_to_num = {element: num for num, element in enumerate(_label)}
     numerical_data = np.vectorize(category_to_num.get)(_y_train)
 
@@ -96,19 +94,25 @@ def open_json(json_file):
     return neuronalnet(_x_train, _y_train)
 
 
+def labeling(data, schwelle, grenze):
+
+    return open_json(prepro.auto_labeling(data, schwelle, grenze, "unknown"))
+
+
+def csv_convert(csvfile, Schwelle, Grenze):
+
+    return labeling((prepro.extract_accelerometer_data(csvfile)), Schwelle, Grenze)
 
 
 def showData_beta(x_train, predictions):
-
-    num_to_category = {0: 'Gerade', 1: 'Kinnhaken', 2: 'Kopfhaken'}
+    num_to_category = {0: 'Gerade', 1: 'Kopfhaken', 2: 'Kinnhaken'}
 
     predicted_classes = np.argmax(predictions, axis=1)
 
     class_counts = np.bincount(predicted_classes)
     gerade_count = class_counts[0]
-    kinnhaken_count = class_counts[1]
-    kopfhaken_count = class_counts[2]
-
+    kopfhaken_count = class_counts[1]
+    kinnhaken_count = class_counts[2]
 
     # Finden Sie den größten Wert jeder Zeile und den zugehörigen Index
     max_values = np.max(predictions, axis=1)
@@ -117,14 +121,26 @@ def showData_beta(x_train, predictions):
     # Erstellen Sie einen neuen Datensatz aus den größten Werten und den zugehörigen Indizes
     new_data = list(zip(max_values, max_indices))
 
-# Erstellen Sie eine neue Liste für Werte unter 0.6
-    values_below_06 = [(index) for value, index in new_data if value < 0.6]
-    class_counts = np.bincount(values_below_06)
-    c1 = class_counts[0]
-    c2 = class_counts[1]
-    c3 = class_counts[2]
+    # Erstellen Sie eine neue Liste für Werte unter 0.6
 
-    return gerade_count, kinnhaken_count, kopfhaken_count, len(values_below_06), c1, c2, c3
+    values_below_06 = [(index) for value, index in new_data if value < 0.6]
+
+    def count_classes(values):
+        # Initialisieren Sie ein Wörterbuch mit den Klassen 0, 1 und 2, die alle auf 0 gesetzt sind
+        class_counts = {0: 0, 1: 0, 2: 0}
+
+        # Zählen Sie die Häufigkeit jeder Klasse in der Liste
+        for value in values:
+            if value in class_counts:
+                class_counts[value] += 1
+
+        return class_counts
+
+    #0 = gerade, 1= kinn, 2 = kopf
+    counter_per_schlag = count_classes(values_below_06)
+
+    return gerade_count, kopfhaken_count, kinnhaken_count, len(values_below_06), counter_per_schlag[0], \
+        counter_per_schlag[1], counter_per_schlag[2]
 
 
 def neuronalnet_beta(x_train, y_train):
@@ -134,13 +150,9 @@ def neuronalnet_beta(x_train, y_train):
     return showData_beta(x_train, dings)
 
 
-
-def open_json_beta(json_file):
+def open_json_beta(dsds):
     periodLengthMS = 1000
     sampleRateUS = 10000
-
-    with open(json_file, 'r') as f:
-        dsds = json.load(f)
 
     ds = prepro.jsonData_to_dataset_in_timedifference_us(dsds)
 
@@ -166,44 +178,59 @@ def open_json_beta(json_file):
     return neuronalnet_beta(_x_train, _y_train)
 
 
+def labeling_beta(data, schwelle, grenze):
+    return open_json_beta(prepro.auto_labeling(data, schwelle, grenze, "unknown"))
+
+
+
+def csv_convert_beta(csvfile, schwelle, grenze):
+
+    return labeling_beta((prepro.extract_accelerometer_data(csvfile)), schwelle, grenze)
+
 
 
 with gr.Blocks() as demo:
-
     with gr.Tab("Deine Boxanalyse"):
         gr.Markdown("### Werte Dein Boxtraining aus!")
         json_input = gr.File(label="JSON Datei hochladen")
+        Schwelle = gr.Slider(0.5, 1.5, value=1, label="Schwelle", step=0.1, info="Grenze für Peaks", interactive=True)    #TODO
+        Grenze = gr.Slider(80, 120, value=90, label="Grenzen", step=1, info="Startwert/Endwert für Peaks", interactive=True)
         gr.Markdown("Tolles Training!")
-        with gr.Row():
 
+        with gr.Row():
             value1_output = gr.Textbox(label="Geraden", elem_id="Geraden")
             value2_output = gr.Textbox(label="Kopfhaken", elem_id="Kopfhaken")
             value3_output = gr.Textbox(label="Kinnhaken", elem_id="Kinnhaken")
         text = gr.Textbox(label="Total", elem_id="Total")
-        plot_output = gr.Image(label = "plotting data...")
+        plot_output = gr.Image(label="plotting data...")
 
-
-
-        json_input.change(open_json, inputs=json_input, outputs=[value1_output, value2_output, value3_output, text, plot_output])
+        json_input.change(fn=csv_convert, inputs=[json_input, Schwelle, Grenze],
+                          outputs=[value1_output, value2_output, value3_output, text, plot_output])
 
     with gr.Tab("Dein Box-Coach(Beta)"):
-        with gr.Tab("Deine Boxanalyse"):
-            gr.Markdown("Hey! Ich bin dein Box-Coach. Lade ein paar Schläge hoch und ich werte sie für dich aus!")
-            json_input = gr.File(label="JSON Datei hochladen")
-            with gr.Row():
-                value1_output = gr.Textbox(label="Geraden", elem_id="Geraden")
-                value2_output = gr.Textbox(label="Kopfhaken", elem_id="Kopfhaken")
-                value3_output = gr.Textbox(label="Kinnhaken", elem_id="Kinnhaken")
-            gr.Markdown("Das war schon nicht schlecht! So viele Schläge waren aber nicht so sauber:")
-            text = gr.Textbox(label="unsaubere Schläge", elem_id="unsaubere Schläge")
-            gr.Markdown("Diese Klassen habe ich dabei vermutet:")
-            with gr.Row():
-                text1 = gr.Textbox(label="unsaubere Geraden", elem_id="unsaubere Geraden")
-                text2 = gr.Textbox(label="unsaubere Kopfhaken", elem_id="unsaubere Kopfhaken")
-                text3 = gr.Textbox(label="unsaubere Kinnhaken", elem_id="unsaubere Kinnhaken")
 
-            json_input.change(open_json_beta, inputs=json_input,
-                              outputs=[value1_output, value2_output, value3_output, text, text1, text2, text3])
+        gr.Markdown("Hey! Ich bin dein Box-Coach. Lade ein paar Schläge hoch und ich werte sie für dich aus!")
+        json_input = gr.File(label="JSON Datei hochladen")                      # TODO
+        Schwelle = gr.Slider(0.5, 1.5, value=1, label="Schwelle", info="Grenze für Peaks", interactive=True)
+        Grenze = gr.Slider(80, 120, value=90, label="Grenzen", step=1, info="Startwert/Endwert für Peaks", interactive=True)
+        with gr.Row():
+            value1_output = gr.Textbox(label="Geraden", elem_id="Geraden")
+            value2_output = gr.Textbox(label="Kopfhaken", elem_id="Kopfhaken")
+            value3_output = gr.Textbox(label="Kinnhaken", elem_id="Kinnhaken")
+        gr.Markdown("Das war schon nicht schlecht! So viele Schläge waren aber nicht so sauber:")
+        text = gr.Textbox(label="unsaubere Schläge", elem_id="unsaubere Schläge")
+        gr.Markdown("Diese Klassen habe ich dabei vermutet:")
+        with gr.Row():
+            text1 = gr.Textbox(label="unsaubere Geraden", elem_id="unsaubere Geraden")
+            text2 = gr.Textbox(label="unsaubere Kopfhaken", elem_id="unsaubere Kopfhaken")
+            text3 = gr.Textbox(label="unsaubere Kinnhaken", elem_id="unsaubere Kinnhaken")
+
+        json_input.change(fn=csv_convert_beta, inputs=[json_input, Schwelle, Grenze],
+                          outputs=[value1_output, value2_output, value3_output, text, plot_output])
 
 if __name__ == "__main__":
     demo.launch()
+
+
+
+

@@ -7,7 +7,13 @@ from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
 
 
-def extract_accelerometer_data(csv_file_path,startpunkt=0,  nano=True, endpunkt = 0):
+def extract_accelerometer_data(csv_file_path, startpunkt=0,  nano=True, endpunkt=0, rechts=True):
+    def invert_data(data):
+        data['x'] = data['x'] * (-1)
+        data['y'] = data['y'] * (-1)
+        data['z'] = data['z'] * (-1)
+        return data
+
     # Load the CSV file into a DataFrame
     df = pd.read_csv(csv_file_path)
 
@@ -27,6 +33,9 @@ def extract_accelerometer_data(csv_file_path,startpunkt=0,  nano=True, endpunkt 
     # drop rows with NaN values
     accelerometer_data = accelerometer_data.dropna()
     accelerometer_data = accelerometer_data.reset_index(drop=True)
+
+    if rechts:
+        accelerometer_data = invert_data(accelerometer_data)
 
     # let timestampt column start with 0 and change it from seconds to nanoseconds
     first_timestamp = accelerometer_data['timestamp'][0]
