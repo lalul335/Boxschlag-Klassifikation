@@ -16,6 +16,7 @@ import json
 import random
 import matplotlib.cm as cm
 import pickle
+from sktime.annotation.clasp import ClaSPSegmentation, find_dominant_window_sizes
 
 # tsfresh modules (for feature extraction)
 from tsfresh import extract_features, extract_relevant_features, select_features
@@ -25,8 +26,21 @@ import logging
 # Set logger-level to "error". Not recommed: Important warnings can be overseen
 logging.basicConfig(level=logging.ERROR)
 
+def prepare_dataset_for_ML(ger_data: list[list[str]], kinn_data: list[str], kopf_data: list[str]):
+    # load the data
+    geraden, kinnhaken, kopfhaken = [], [], []
+    for file_link in ger_data:
+        extracted_data = extract_data(csv_file_path=file_link[0], startpunkt=file_link[1], endpunkt=file_link[2])
+        labeled_data = auto_labeling(extracted_data, label='0') #Gerade
 
-def extract_data(csv_file_path,startpunkt=0,  nano=True, endpunkt=0, rechts=False):
+
+
+
+    for file_link in kinn_data:
+        kinnhaken.append(extract_data(file_link))
+    for file_link in kopf_data:
+        kopfhaken.append(extract_data(file_link))
+def extract_data(csv_file_path,startpunkt=0,  nano=True, endpunkt=0, invert=False):
     # Load the CSV file into a DataFrame
     df = pd.read_csv(csv_file_path)
     if endpunkt != 0:
@@ -49,7 +63,7 @@ def extract_data(csv_file_path,startpunkt=0,  nano=True, endpunkt=0, rechts=Fals
     data = data.dropna()
     data = data.reset_index(drop=True)
 
-    if rechts:
+    if invert:
         data = invert_dataset(data)
 
     # let timestampt column start with 0 and change it from seconds to nanoseconds
@@ -149,19 +163,39 @@ def data_to_raw(data, label):
 
     return one_punch
 
-def auto_labeling(data, height, distance, label, invert=False):
+def print_peaks(r_data, peaks):
+    data = r_data[['one_value']].copy()
+    t = np.arange(0, len(data))
+    x_scatter = r_data.iloc[peaks['index']]
+
+    fig, ax = plt.subplots(figsize=(20, 10))
+    ax.plot(t, data['one_value'], label='one_value')
+    ax.scatter(peaks['index'], x_scatter['one_value'], 30, "blue", label="spikes")
+    plt.show()
+
+def auto_labeling(data, label:str, height=0, distance=0, invert=False):
     # liste mit Schlägen
     punches = []
 
     # PCA
     r_data = reduce_dimensionality(data)
 
+    std = r_data['one_value'].std()
+    window_size = find_dominant_window_sizes(r_data['one_value'])
+    highest_10 = r_data['one_value'].nlargest(10).sum()
+    lowest_10 = r_data['one_value'].nsmallest(10).sum()
+
+    if lowest_10 < 0 and lowest_10*-1 > highest_10:
+        r_data['one_value'] = r_data['one_value'] * -1
+
     # df mit den Hochpunkten
-    p = scipy.signal.find_peaks(r_data['one_value'], height=height, distance=distance)
+    p = scipy.signal.find_peaks(r_data['one_value'], height=std, distance=window_size)
     peaks = data.iloc[p[0]]
 
     # eine Spalte mit den Indizes der Hochpunkte wird erstellt
     peaks = peaks.reset_index()
+
+    print_peaks(r_data, peaks)
 
     # invert after finding peaks
     if invert:
