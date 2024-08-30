@@ -1,2 +1,2 @@
 # Boxschlag-Klassifikation
-Boxschlag Klassifikationsmodell, welches verschiedene Schlagarten anhand von Sensordaten einer Smartwatch klassifizieren kann. 
+Dies ist das Repository der Gruppe "Team Dachdecker" zum Seminar an der Leuphana Universität "Maschinelles Lernen und das Quantified Self" von Burkhardt Funk.
