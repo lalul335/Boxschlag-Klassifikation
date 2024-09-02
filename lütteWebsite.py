@@ -144,9 +144,9 @@ def showData_beta(x_train, predictions):
 
 
 def neuronalnet_beta(x_train, y_train):
+
     mymodel = load_model('cnn.keras')
     dings = mymodel.predict(x_train)
-    print(dings[1])
     return showData_beta(x_train, dings)
 
 
@@ -179,6 +179,7 @@ def open_json_beta(dsds):
 
 
 def labeling_beta(data, schwelle, grenze):
+
     return open_json_beta(prepro.auto_labeling(data, schwelle, grenze, "unknown"))
 
 
@@ -211,7 +212,7 @@ with gr.Blocks() as demo:
 
         gr.Markdown("Hey! Ich bin dein Box-Coach. Lade ein paar Schläge hoch und ich werte sie für dich aus!")
         json_input = gr.File(label="JSON Datei hochladen")                      # TODO
-        Schwelle = gr.Slider(0.5, 1.5, value=1, label="Schwelle", info="Grenze für Peaks", interactive=True)
+        Schwelle = gr.Slider(0.5, 1.5, value=1, label="Schwelle", step=0.1, info="Grenze für Peaks", interactive=True)
         Grenze = gr.Slider(80, 120, value=90, label="Grenzen", step=1, info="Startwert/Endwert für Peaks", interactive=True)
         with gr.Row():
             value1_output = gr.Textbox(label="Geraden", elem_id="Geraden")
@@ -226,7 +227,7 @@ with gr.Blocks() as demo:
             text3 = gr.Textbox(label="unsaubere Kinnhaken", elem_id="unsaubere Kinnhaken")
 
         json_input.change(fn=csv_convert_beta, inputs=[json_input, Schwelle, Grenze],
-                          outputs=[value1_output, value2_output, value3_output, text, plot_output])
+                          outputs=[value1_output, value2_output, value3_output, text, text1, text2, text3])
 
 if __name__ == "__main__":
     demo.launch()
